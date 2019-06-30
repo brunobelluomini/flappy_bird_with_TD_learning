@@ -26,7 +26,7 @@ class Sarsa:
         self.Q = defaultdict(lambda: np.zeros(env.action_space))
         self.env = env
         self.alpha = 0.80
-        self.gamma = 0.99
+        self.gamma = 1.00
         self.epsilon = 0.10
 
 
@@ -62,7 +62,7 @@ class QLearning:
         self.Q = defaultdict(lambda: np.zeros(env.action_space))
         self.env = env
         self.alpha = 0.80
-        self.gamma = 0.99
+        self.gamma = 1.00
         self.epsilon = 0.10
 
 
@@ -94,7 +94,7 @@ class ExpectedSarsa:
         self.Q = defaultdict(lambda: np.zeros(env.action_space))
         self.env = env
         self.alpha = 0.80
-        self.gamma = 0.99
+        self.gamma = 1.00
         self.epsilon = 0.10
 
 
