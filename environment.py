@@ -43,6 +43,7 @@ class FlappyEnvironment:
         self.base_y = self.height * 0.79
         self.game_grid = create_uniform_grid(self.width, self.height)
         self.game_score = 0
+        self.has_scored = False
         self.loop_iter = 0
 
         # Bird (player) settings
@@ -84,6 +85,8 @@ class FlappyEnvironment:
 
     
     def step(self, action):
+        self.has_scored = False
+
         if action == 1:
             if self.bird_pos_y > -2 * self.bird_height:
                 self.bird_vel_y = self.bird_flap_acc
@@ -103,6 +106,7 @@ class FlappyEnvironment:
             pipe_mid_pos = pipe['x'] + self.pipe_width / 2
 
             if pipe_mid_pos <= bird_mid_pos < pipe_mid_pos + 4:
+                self.has_scored = True
                 self.game_score += 1
         
         # Player index change
@@ -214,8 +218,11 @@ class FlappyEnvironment:
 
     def get_reward(self, collision):
         if collision:
-            return - 100_000
-        
+            return -100_000
+
+        elif self.has_scored:
+            return 1000
+
         return 1
 
 
@@ -226,7 +233,7 @@ class FlappyEnvironment:
             pipe = self.lower_pipes[1]
 
         bird_tile_pos = map_position_tile([self.bird_pos_x, self.bird_pos_y], self.game_grid)
-        lower_pipe_tile_pos = map_position_tile([pipe['x'], pipe['y']], self.game_grid)
-        pos_difference = np.subtract(lower_pipe_tile_pos, bird_tile_pos)
+        mid_pipe_gap_tile_pos = map_position_tile([pipe['x'], pipe['y'] + self.pipe_gap_size / 2], self.game_grid)
+        pos_difference = np.subtract(mid_pipe_gap_tile_pos, bird_tile_pos)
 
         return f"{pos_difference[0]}_{pos_difference[1]}_{self.bird_vel_y}"
