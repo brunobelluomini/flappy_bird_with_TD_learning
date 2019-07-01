@@ -70,7 +70,8 @@ for i_episode in range(1, n_episodes + 1):
     if i_episode % 100 == 0:
         print("\rEpisode {}/{} - Max Score {}".format(i_episode, n_episodes, np.array(sarsa_scores).max()), end="")
         sys.stdout.flush()
-
+        
+sarsa.save_q_values()
 sarsa_df = pd.DataFrame(data=sarsa_scores, index=n_episodes_range, columns=['score'])
 
 
@@ -102,6 +103,7 @@ for i_episode in range(1, n_episodes + 1):
     qlearning.learn(env)
     q_learning_scores.append(env.game_score)
 
+qlearning.save_q_values()
 q_learning_df = pd.DataFrame(data=q_learning_scores, index=n_episodes_range, columns=['score'])
 
 
@@ -133,6 +135,7 @@ for i_episode in range(1, n_episodes + 1):
     expected_sarsa.learn(env)
     expected_sarsa_scores.append(env.game_score)
     
+expected_sarsa.save_q_values()
 expecte_sarsa_df = pd.DataFrame(data=expected_sarsa_scores, index=n_episodes_range, columns=['score'])
 
 
@@ -144,7 +147,7 @@ plot_training_results(expecte_sarsa_df, "Expected Sarsa")
 
 # # Model Comparison
 
-# In[16]:
+# In[15]:
 
 
 import matplotlib.pyplot as plt

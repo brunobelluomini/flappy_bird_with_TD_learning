@@ -1,6 +1,7 @@
 import numpy as np
 from collections import defaultdict
 import json
+import os
 
 
 def make_epsilon_greedy_policy(action_space_size, Q_state, epsilon):
@@ -23,12 +24,12 @@ def update_Q_values(alpha, reward, gamma, Q_current_action, Q_next_action):
 class Sarsa:
 
 
-    def __init__(self, action_space):
+    def __init__(self, action_space, force_training=False):
         self.action_space = action_space
-        self.Q = defaultdict(lambda: np.zeros(self.action_space))
+        self.Q = self.load_q_values(force_training)
         self.alpha = 0.70
         self.gamma = 1.00
-        self.epsilon = 0.10
+        self.epsilon = 0.15
 
 
     def learn(self, env):
@@ -54,17 +55,34 @@ class Sarsa:
 
             if done:
                 break
+
+
+    def load_q_values(self, force_training):
+        if force_training or not os.path.exists('sarsa_q_values.json'):
+            return defaultdict(lambda: [0 for action in range(self.action_space)])
+        else:
+            q_values_file = open('sarsa_q_values.json', 'r')
+            q_values = json.load(q_values_file)
+            q_values_file.close()
+
+            return defaultdict(lambda: [0 for action in range(self.action_space)], q_values)
+
+
+    def save_q_values(self):
+        q_values_file = open('sarsa_q_values.json', 'w')
+        json.dump(dict(self.Q), q_values_file)
+        q_values_file.close()
         
 
 class QLearning:
 
 
-    def __init__(self, action_space):
+    def __init__(self, action_space, force_training=False):
         self.action_space = action_space
-        self.Q = defaultdict(lambda: np.zeros(self.action_space))
+        self.Q = self.load_q_values(force_training)
         self.alpha = 0.70
         self.gamma = 1.00
-        self.epsilon = 0.10
+        self.epsilon = 0.15
 
 
     def learn(self, env):
@@ -88,15 +106,32 @@ class QLearning:
                 break
 
 
+    def load_q_values(self, force_training):
+        if force_training or not os.path.exists('q_learning_q_values.json'):
+            return defaultdict(lambda: [0 for action in range(self.action_space)])
+        else:
+            q_values_file = open('q_learning_q_values.json', 'r')
+            q_values = json.load(q_values_file)
+            q_values_file.close()
+
+            return defaultdict(lambda: [0 for action in range(self.action_space)], q_values)
+
+
+    def save_q_values(self):
+        q_values_file = open('q_learning_q_values.json', 'w')
+        json.dump(dict(self.Q), q_values_file)
+        q_values_file.close()
+
+
 class ExpectedSarsa:
 
 
-    def __init__(self, action_space):
+    def __init__(self, action_space, force_training=False):
         self.action_space = action_space
-        self.Q = defaultdict(lambda: np.zeros(self.action_space))
+        self.Q = self.load_q_values(force_training)
         self.alpha = 0.70
         self.gamma = 1.00
-        self.epsilon = 0.10
+        self.epsilon = 0.15
 
 
     def learn(self, env):
@@ -119,3 +154,27 @@ class ExpectedSarsa:
 
             if done:
                 break
+
+
+    def act(self, state):
+        epsilon_greedy_policy = make_epsilon_greedy_policy(self.action_space, self.Q[state], self.epsilon)
+        action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+
+        return action
+
+
+    def load_q_values(self, force_training):
+        if force_training or not os.path.exists('expected_sarsa_q_values.json'):
+            return defaultdict(lambda: [0 for action in range(self.action_space)])
+        else:
+            q_values_file = open('expected_sarsa_q_values.json', 'r')
+            q_values = json.load(q_values_file)
+            q_values_file.close()
+
+            return defaultdict(lambda: [0 for action in range(self.action_space)], q_values)
+
+
+    def save_q_values(self):
+        q_values_file = open('expected_sarsa_q_values.json', 'w')
+        json.dump(dict(self.Q), q_values_file)
+        q_values_file.close()

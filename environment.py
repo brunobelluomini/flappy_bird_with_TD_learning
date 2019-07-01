@@ -214,7 +214,7 @@ class FlappyEnvironment:
 
     def get_reward(self, collision):
         if collision:
-            return - 100000
+            return - 100_000
         
         return 1
 

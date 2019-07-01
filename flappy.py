@@ -3,10 +3,13 @@ from itertools import cycle
 import random
 import sys
 
+from agent import ExpectedSarsa
 import pygame
 from pygame.locals import *
 
 from environment import create_uniform_grid, map_position_tile
+
+bot = ExpectedSarsa(2)
 
 FPS = 30
 SCREENWIDTH  = 288
@@ -228,6 +231,9 @@ def mainGame(movementInfo):
     playerFlapped = False # True when player flaps
 
     while True:
+        state = get_state(lowerPipes, playerx, playery, playerVelY)
+        action = bot.act(state)
+
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
@@ -238,11 +244,11 @@ def mainGame(movementInfo):
                     playerFlapped = True
                     SOUNDS['wing'].play()
 
-        print(f"Pipe position: x ={lowerPipes[1]['x']} | y={lowerPipes[1]['y']}")
-        # player_tile_position = map_position_tile([playery, playerx], game_grid)
-        # lower_pipe_tile_position = map_position_tile([lowerPipes[0]['y'], lowerPipes[0]['x']], game_grid)
-        # player_pipe_position_difference = np.subtract(lower_pipe_tile_position, player_tile_position)
-        # print(f"State: {player_pipe_position_difference[0]}_{player_pipe_position_difference[1]}_ {playerVelY}")
+        if action == 1:
+            if playery > -2 * IMAGES['player'][0].get_height():
+                playerVelY = playerFlapAcc
+                playerFlapped = True
+                SOUNDS['wing'].play()
 
         # check for crash here
         crashTest = checkCrash({'x': playerx, 'y': playery, 'index': playerIndex},
@@ -490,6 +496,20 @@ def getHitmask(image):
         for y in xrange(image.get_height()):
             mask[x].append(bool(image.get_at((x,y))[3]))
     return mask
+
+
+def get_state(lowerPipes, playerx, playery, playerVelY):
+    if lowerPipes[0]['x'] - playerx > -30:
+        pipe = lowerPipes[0]
+    else:
+        pipe = lowerPipes[1]
+
+    bird_tile_pos = map_position_tile([playerx, playery], game_grid)
+    lower_pipe_tile_pos = map_position_tile([pipe['x'], pipe['y']], game_grid)
+    pos_difference = np.subtract(lower_pipe_tile_pos, bird_tile_pos)
+
+    return f"{pos_difference[0]}_{pos_difference[1]}_{playerVelY}"
+
 
 if __name__ == '__main__':
     main()
