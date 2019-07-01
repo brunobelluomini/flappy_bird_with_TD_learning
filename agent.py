@@ -1,5 +1,6 @@
 import numpy as np
 from collections import defaultdict
+import json
 
 
 def make_epsilon_greedy_policy(action_space_size, Q_state, epsilon):
@@ -22,23 +23,23 @@ def update_Q_values(alpha, reward, gamma, Q_current_action, Q_next_action):
 class Sarsa:
 
 
-    def __init__(self, env):
-        self.Q = defaultdict(lambda: np.zeros(env.action_space))
-        self.env = env
-        self.alpha = 0.80
+    def __init__(self, action_space):
+        self.action_space = action_space
+        self.Q = defaultdict(lambda: np.zeros(self.action_space))
+        self.alpha = 0.70
         self.gamma = 1.00
         self.epsilon = 0.10
 
 
-    def learn(self):
-        state = self.env.reset()
-        epsilon_greedy_policy = make_epsilon_greedy_policy(self.env.action_space, self.Q[state], self.epsilon)
-        action = choose_action_from_policy(self.env.action_space, epsilon_greedy_policy)
+    def learn(self, env):
+        state = env.get_state()
+        epsilon_greedy_policy = make_epsilon_greedy_policy(self.action_space, self.Q[state], self.epsilon)
+        action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
 
         while True:
-            next_state, reward, done = self.env.step(action)
-            epsilon_greedy_policy = make_epsilon_greedy_policy(self.env.action_space, self.Q[next_state], self.epsilon)
-            next_action = choose_action_from_policy(self.env.action_space, epsilon_greedy_policy)
+            next_state, reward, done = env.step(action)
+            epsilon_greedy_policy = make_epsilon_greedy_policy(self.action_space, self.Q[next_state], self.epsilon)
+            next_action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
             Q_current_action = self.Q[state][action]
             Q_next_action = self.Q[next_state][next_action]
             self.Q[next_state][next_action] = update_Q_values(
@@ -53,27 +54,27 @@ class Sarsa:
 
             if done:
                 break
-
+        
 
 class QLearning:
 
 
-    def __init__(self, env):
-        self.Q = defaultdict(lambda: np.zeros(env.action_space))
-        self.env = env
-        self.alpha = 0.80
+    def __init__(self, action_space):
+        self.action_space = action_space
+        self.Q = defaultdict(lambda: np.zeros(self.action_space))
+        self.alpha = 0.70
         self.gamma = 1.00
         self.epsilon = 0.10
 
 
-    def learn(self):
-        state = self.env.reset()
+    def learn(self, env):
+        state = env.get_state()
 
         while True:
-            epsilon_greedy_policy = make_epsilon_greedy_policy(self.env.action_space, self.Q[state], self.epsilon)
-            action = choose_action_from_policy(self.env.action_space, epsilon_greedy_policy)
-            next_state, reward, done = self.env.step(action)
-            max_Q_a = np.max([self.Q[next_state][next_action] for next_action in np.arange(self.env.action_space)])
+            epsilon_greedy_policy = make_epsilon_greedy_policy(self.action_space, self.Q[state], self.epsilon)
+            action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+            next_state, reward, done = env.step(action)
+            max_Q_a = np.max([self.Q[next_state][next_action] for next_action in np.arange(self.action_space)])
             self.Q[state][action] = update_Q_values(
                 self.alpha,
                 reward,
@@ -90,22 +91,22 @@ class QLearning:
 class ExpectedSarsa:
 
 
-    def __init__(self, env):
-        self.Q = defaultdict(lambda: np.zeros(env.action_space))
-        self.env = env
-        self.alpha = 0.80
+    def __init__(self, action_space):
+        self.action_space = action_space
+        self.Q = defaultdict(lambda: np.zeros(self.action_space))
+        self.alpha = 0.70
         self.gamma = 1.00
         self.epsilon = 0.10
 
 
-    def learn(self):
-        state = self.env.reset()
+    def learn(self, env):
+        state = env.get_state()
 
         while True:
-            epsilon_greedy_policy = make_epsilon_greedy_policy(self.env.action_space, self.Q[state], self.epsilon)
-            action = choose_action_from_policy(self.env.action_space, epsilon_greedy_policy)
-            next_state, reward, done = self.env.step(action)
-            next_policy = make_epsilon_greedy_policy(self.env.action_space, self.Q[next_state], self.epsilon)
+            epsilon_greedy_policy = make_epsilon_greedy_policy(self.action_space, self.Q[state], self.epsilon)
+            action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+            next_state, reward, done = env.step(action)
+            next_policy = make_epsilon_greedy_policy(self.action_space, self.Q[next_state], self.epsilon)
             expected_Q = np.dot(self.Q[next_state], next_policy)
             self.Q[state][action] = update_Q_values(
                 self.alpha,

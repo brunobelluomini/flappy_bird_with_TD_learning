@@ -1,3 +1,4 @@
+import numpy as np
 from itertools import cycle
 import random
 import sys
@@ -5,10 +6,12 @@ import sys
 import pygame
 from pygame.locals import *
 
+from environment import create_uniform_grid, map_position_tile
 
 FPS = 30
 SCREENWIDTH  = 288
 SCREENHEIGHT = 512
+game_grid = create_uniform_grid(SCREENHEIGHT, SCREENWIDTH)
 PIPEGAPSIZE  = 100 # gap between upper and lower part of pipe
 BASEY        = SCREENHEIGHT * 0.79
 # image, sound and hitmask  dicts
@@ -144,7 +147,7 @@ def showWelcomeAnimation():
 
     playerx = int(SCREENWIDTH * 0.2)
     playery = int((SCREENHEIGHT - IMAGES['player'][0].get_height()) / 2)
-
+    
     messagex = int((SCREENWIDTH - IMAGES['message'].get_width()) / 2)
     messagey = int(SCREENHEIGHT * 0.12)
 
@@ -224,7 +227,6 @@ def mainGame(movementInfo):
     playerFlapAcc =  -9   # players speed on flapping
     playerFlapped = False # True when player flaps
 
-    t = 0
     while True:
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
@@ -235,8 +237,12 @@ def mainGame(movementInfo):
                     playerVelY = playerFlapAcc
                     playerFlapped = True
                     SOUNDS['wing'].play()
-        t += 1
-        print(f"Movement {t}: Diff X to Pipe -  {upperPipes[0]['x'] - playerx} | Diff Y to Pipe - {upperPipes[0]['y'] - playery} | Velocity Y - {playerVelY}")
+
+        print(f"Pipe position: x ={lowerPipes[1]['x']} | y={lowerPipes[1]['y']}")
+        # player_tile_position = map_position_tile([playery, playerx], game_grid)
+        # lower_pipe_tile_position = map_position_tile([lowerPipes[0]['y'], lowerPipes[0]['x']], game_grid)
+        # player_pipe_position_difference = np.subtract(lower_pipe_tile_position, player_tile_position)
+        # print(f"State: {player_pipe_position_difference[0]}_{player_pipe_position_difference[1]}_ {playerVelY}")
 
         # check for crash here
         crashTest = checkCrash({'x': playerx, 'y': playery, 'index': playerIndex},
