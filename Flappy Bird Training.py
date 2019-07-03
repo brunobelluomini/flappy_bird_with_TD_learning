@@ -148,18 +148,18 @@ plot_training_results(expecte_sarsa_df, "Expected Sarsa", "expected_sarsa_traini
 
 # # Model Comparison
 
-# In[15]:
+# In[25]:
 
 
 import matplotlib.pyplot as plt
 
-zoom_at = 1000
 plt.subplots(figsize=(16, 8))
-plt.plot(range(0, zoom_at), sarsa_scores[:zoom_at], label='Sarsa')
-plt.plot(range(0, zoom_at), q_learning_scores[:zoom_at], label='Q-Learning (Sarsamax)')
-plt.plot(range(0, zoom_at), expected_sarsa_scores[:zoom_at], label='Expected Sarsa')
+plt.title("Models Comparison")
+plt.plot(sarsa_df.index, sarsa_df['score'].rolling(window=100).mean(), label='Sarsa', color='blue')
+plt.plot(q_learning_df.index, q_learning_df['score'].rolling(window=100).mean(), label='Q-Learning', color='orange')
+plt.plot(expecte_sarsa_df.index, expecte_sarsa_df['score'].rolling(window=100).mean(), label='Expected Sarsa', color='green')
 plt.xlabel('Episodes')
-plt.ylabel("Sum of rewards during episodes")
+plt.ylabel("Avg Score every 100 episodes")
 plt.legend()
 plt.show()
 plt.savefig("images/model_comparison.png")

@@ -57,6 +57,13 @@ class Sarsa:
                 break
 
 
+    def act(self, state):
+        epsilon_greedy_policy = make_epsilon_greedy_policy(self.action_space, self.Q[state], self.epsilon)
+        action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+
+        return action
+
+
     def load_q_values(self, force_training):
         if force_training or not os.path.exists('sarsa_q_values.json'):
             return defaultdict(lambda: [0 for action in range(self.action_space)])
@@ -104,6 +111,13 @@ class QLearning:
 
             if done:
                 break
+
+
+    def act(self, state):
+        epsilon_greedy_policy = make_epsilon_greedy_policy(self.action_space, self.Q[state], self.epsilon)
+        action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+
+        return action
 
 
     def load_q_values(self, force_training):

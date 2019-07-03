@@ -54,8 +54,8 @@ class FlappyEnvironment:
         self.bird_index_gen = cycle([0, 1, 2, 1])
         self.bird_index = 0
         self.bird_vel_y = -9
-        self.bird_max_vel_y = 10   
-        self.bird_min_vel_y = -8   
+        self.bird_max_vel_y = 10
+        self.bird_min_vel_y = -9
         self.bird_acc_y = 1    
         self.bird_flap_acc = -9   
         self.bird_flapped = False
