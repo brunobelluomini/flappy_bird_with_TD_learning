@@ -38,7 +38,7 @@ n_episodes_range = [x+1 for x in range(n_episodes)]
 # In[5]:
 
 
-def plot_training_results(result_df, algorithm_title, figsize=(16,6)):
+def plot_training_results(result_df, algorithm_title, figure_filename, figsize=(16,6)):
     plt.subplots(figsize=figsize)
     plt.plot(result_df.index, result_df['score'], label='Scores', color='b')
     plt.plot(result_df.index, result_df['score'].rolling(window=100).mean(), label='Avg Scores every 100 episodes', color='red')
@@ -47,6 +47,7 @@ def plot_training_results(result_df, algorithm_title, figsize=(16,6)):
     plt.xlabel('# Episodes')
     plt.legend()
     plt.show()
+    plt.savefig(f'images/{figure_filename}.png')
 
 
 # ## Sarsa
@@ -78,7 +79,7 @@ sarsa_df = pd.DataFrame(data=sarsa_scores, index=n_episodes_range, columns=['sco
 # In[8]:
 
 
-plot_training_results(sarsa_df, "Sarsa")
+plot_training_results(sarsa_df, "Sarsa", "sarsa_training_scores")
 
 
 # ## Q-Learning
@@ -110,7 +111,7 @@ q_learning_df = pd.DataFrame(data=q_learning_scores, index=n_episodes_range, col
 # In[11]:
 
 
-plot_training_results(q_learning_df, "Q-Learning")
+plot_training_results(q_learning_df, "Q-Learning", "q_learning_training_scores")
 
 
 # ## Expected Sarsa
@@ -142,7 +143,7 @@ expecte_sarsa_df = pd.DataFrame(data=expected_sarsa_scores, index=n_episodes_ran
 # In[14]:
 
 
-plot_training_results(expecte_sarsa_df, "Expected Sarsa")
+plot_training_results(expecte_sarsa_df, "Expected Sarsa", "expected_sarsa_training_scores")
 
 
 # # Model Comparison
@@ -161,4 +162,5 @@ plt.xlabel('Episodes')
 plt.ylabel("Sum of rewards during episodes")
 plt.legend()
 plt.show()
+plt.savefig("images/model_comparison.png")
 

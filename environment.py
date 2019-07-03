@@ -66,6 +66,7 @@ class FlappyEnvironment:
         self.pipe_width = 52
         self.pipe_height = 320
 
+
         with open('hitmasks_data.pkl', 'rb') as self.hitmasks_data_input:
             self.hitmasks = pickle.load(self.hitmasks_data_input)
 
@@ -93,7 +94,6 @@ class FlappyEnvironment:
                 self.bird_flapped = True
         
         collision_check = self.check_collision()
-        reward = self.get_reward(collision_check)
 
         if collision_check:
             done = True
@@ -142,6 +142,7 @@ class FlappyEnvironment:
 
         # Get the next state
         next_state = self.get_state()
+        reward = self.get_reward(collision_check, next_state)
 
         return next_state, reward, done
 
@@ -216,14 +217,19 @@ class FlappyEnvironment:
         return [upper_pipe, lower_pipe]
 
 
-    def get_reward(self, collision):
+    def get_reward(self, collision, next_state):
+        vertical_pos_diff = abs(int(next_state.split('_')[1]))
+
         if collision:
-            return -100_000
+            return -10000
 
         elif self.has_scored:
             return 1000
 
-        return 1
+        elif vertical_pos_diff == 0:
+            return 100
+
+        return 10 / vertical_pos_diff
 
 
     def get_state(self):

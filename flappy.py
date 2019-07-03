@@ -505,8 +505,8 @@ def get_state(lowerPipes, playerx, playery, playerVelY):
         pipe = lowerPipes[1]
 
     bird_tile_pos = map_position_tile([playerx, playery], game_grid)
-    lower_pipe_tile_pos = map_position_tile([pipe['x'], pipe['y'] + PIPEGAPSIZE / 2], game_grid)
-    pos_difference = np.subtract(lower_pipe_tile_pos, bird_tile_pos)
+    mid_pipe_tile_pos = map_position_tile([pipe['x'], pipe['y'] + PIPEGAPSIZE / 2], game_grid)
+    pos_difference = np.subtract(mid_pipe_tile_pos, bird_tile_pos)
 
     return f"{pos_difference[0]}_{pos_difference[1]}_{playerVelY}"
 
