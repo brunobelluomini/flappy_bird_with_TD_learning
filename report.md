@@ -64,29 +64,29 @@ Here is an example of the three state space components `DistX`, `DistY` and `Vel
 
 ### Algorithms and Techniques
 
+#### Algorithms
 
-#### Sarsa
+For the algorithms we will use the _Temporal-Difference Methods_ ones which we
+have learned in the Nanodegree: Sarsa, Q-Learning (ε-greedy policy) and Expected Sarsa (ε-greedy policy).
+As the Flappy Bird game has some repetition in the way it works, it could be a good idea
+to use RL algorithms which learn from each iteration, not only when the episode ends, and the
+TD algorithms have this ability.
 
+#### Space Discretization
 
-#### Q-Learning (ε-greedy policy)
-
-#### Expected Sarsa (ε-greedy policy)
-
-
-
-In this section, you will need to discuss the algorithms and techniques you intend to use for solving the problem. You should justify the use of each one based on the characteristics of the problem and the problem domain. Questions to ask yourself when writing this section:
-- _Are the algorithms you will use, including any default variables/parameters in the project clearly defined?_
-- _Are the techniques to be used thoroughly discussed and justified?_
-- _Is it made clear how the input data or datasets will be handled by the algorithms and techniques chosen?_
+In order to reduce the dimensionality of our states we'll use the Space Discretization
+technique. We will divide the space into 5x5 pixels tiles and use the resulted grid
+to compose the state. This will reduce our game's state space from 7695 to 1539 possible states, 
+a reduction of 80%.
 
 ### Benchmark
-In this section, you will need to provide a clearly defined benchmark result or threshold for comparing across performances obtained by your solution. The reasoning behind the benchmark (in the case where it is not an established result) should be discussed. Questions to ask yourself when writing this section:
-- _Has some result or value been provided that acts as a benchmark for measuring performance?_
-- _Is it clear how this result or value was obtained (whether by data or by hypothesis)?_
 
+Our benchmark model will be the Q-Learning implementation made by chncyhn ([https://github.com/chncyhn/flappybird-qlearning-bot](https://github.com/chncyhn/flappybird-qlearning-bot)). He modelled the problem
+in a very similar way and used a very similar algorithm (Q-Learning instead of Q-Learning with ε-greedy policy).
+
+Speaking with numbers, he reached an average score of around 675 after the convergence, so we'll try to reach this number as far as possible.
 
 ## III. Methodology
-_(approx. 3-5 pages)_
 
 ### Data Preprocessing
 In this section, all of your preprocessing steps will need to be clearly documented, if any were necessary. From the previous section, any of the abnormalities or characteristics that you identified about the dataset will be addressed and corrected here. Questions to ask yourself when writing this section:
@@ -95,10 +95,46 @@ In this section, all of your preprocessing steps will need to be clearly documen
 - _If no preprocessing is needed, has it been made clear why?_
 
 ### Implementation
+
+#### Algorithms
+
+Their implementation can be found in the `agent.py` file.
+
+
+#### Space Discretization
+The discretization will be implemented as follows:
+
+```Python
+def create_uniform_grid(width, height):
+    """
+    Create grids of 5x5 pixels
+    """
+    grid_size = (5, 5)
+    num_bins_horizontal = int(round(width / grid_size[0]))
+    num_bins_vertical = int(round(height / grid_size[1]))
+    bins = (num_bins_horizontal, num_bins_vertical)
+    low = [0, 0]
+    high = [width, height]
+    grid = [np.linspace(low[dim], high[dim], bins[dim] + 1)[1:-1] for dim in range(len(bins))]
+
+    return grid
+
+
+def map_position_tile(position, grid):
+    """
+    Map some position acording to the discretized game space
+    Input: position (list): List with position [x, y]
+    Output: grid (list): Tile which matches the given position for a given grid
+    """
+    return list(int(np.digitize(p, g)) for p, g in zip(position, grid))
+```
+
 In this section, the process for which metrics, algorithms, and techniques that you implemented for the given data will need to be clearly documented. It should be abundantly clear how the implementation was carried out, and discussion should be made regarding any complications that occurred during this process. Questions to ask yourself when writing this section:
 - _Is it made clear how the algorithms and techniques were implemented with the given datasets or input data?_
 - _Were there any complications with the original metrics or techniques that required changing prior to acquiring a solution?_
 - _Was there any part of the coding process (e.g., writing complicated functions) that should be documented?_
+
+
 
 ### Refinement
 In this section, you will need to discuss the process of improvement you made upon the algorithms and techniques you used in your implementation. For example, adjusting parameters for certain models to acquire improved solutions would fall under the refinement category. Your initial and final solutions should be reported, as well as any significant intermediate results as necessary. Questions to ask yourself when writing this section:
