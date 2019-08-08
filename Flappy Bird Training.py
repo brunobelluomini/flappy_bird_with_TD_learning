@@ -20,6 +20,7 @@ import sys
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
+np.random.seed(42)
 
 
 # In[3]:

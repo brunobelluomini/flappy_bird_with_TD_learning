@@ -470,7 +470,7 @@ Based on the benchmark model which reached its convergence at 10,000 episodes.
 Here are the training results:
 
 <p align="center">
-  <img src="images/model_comparison.png">
+  <img widht=350 height=300 src="images/model_comparison.png">
 </p>
 <center><i>AvgScore100 x Episodes curve. Q-Learning reached the best score among them</center></i>
 
@@ -491,7 +491,7 @@ None of our agents could match at least _AvgScore<sub>100</sub>_ = 1  in the end
 Here is the AvgScore100 x Episodes curve for the Benchmark Model:
 
 <p align="center">
-  <img widht=600 height=500 src="images/chncyhn_model_evaluation_example.png">
+  <img widht=250 height=300 src="images/chncyhn_model_evaluation_example.png">
 </p>
 <center><i> AvgScore100 x Episodes curve for the Benchmark Model (source: https://github.com/chncyhn/flappybird-qlearning-bot).</center></i>
 
@@ -504,7 +504,7 @@ Notice that benchmark model converges by the iteration (episode) 6200 and the _A
 ### Free-Form Visualization
 
 <p align="center">
-  <img widht=600 height=500 src="images/bot_playing_example.png">
+  <img widht=500 height=250 src="images/bot_playing_example.png">
 </p>
 <center><i>Q-Learning agent playing after training.</center></i>
 
