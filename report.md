@@ -451,14 +451,14 @@ $$AvgScore_{100} = {1}/{100}*\sum_{episode=1}^{100} GameScore_{episode}$$
 
 All three algorithms are trained with the same parameters, explained below:
 
-* Learning Rate ($\alpha$): **0.15**
-As Flappy Bird game has a deterministic behavior in regard of whether flap or not, setting a small value for $\alpha$ is reasonable in order to avoid our agent to unlearn some good movement.
+* Learning Rate (⍺): **0.15**
+As Flappy Bird game has a deterministic behavior in regard of whether flap or not, setting a small value for ⍺ is reasonable in order to avoid our agent to unlearn some good movement.
 
-* Discount Rate ($\gamma$): **1.00**
-Similarly to the learning rate, the $\gamma$ is set to 1,0 to avoid agent to learn some unexpected movement in order to prioritize the immediate reward.
+* Discount Rate (γ): **1.00**
+Similarly to the learning rate, the γ is set to 1,0 to avoid agent to learn some unexpected movement in order to prioritize the immediate reward.
 
-* Exploration-Exploitation Rate ($\epsilon$): **max(1 - (0.045 * n_episode), 0.10)**
-We set the $\epsilon$ value by starting with 1.0 and decaying linearly until it reaches 0.10 over the first 2% of the number of trained episodes and fixed at 0.10 thereafter based on [Human-level control through deep reinforcement learning](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf) research paper
+* Exploration-Exploitation Rate (ε): **max(1 - (0.045 * n_episode), 0.10)**
+We set the ε value by starting with 1.0 and decaying linearly until it reaches 0.10 over the first 2% of the number of trained episodes and fixed at 0.10 thereafter based on [Human-level control through deep reinforcement learning](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf) research paper
 
 * Number of Episodes: **10,000**
 Based on the benchmark model which reached its convergence at 10,000 episodes.
@@ -475,18 +475,18 @@ Here are the training results:
 <center><i>AvgScore100 x Episodes curve. Q-Learning reached the best score among them</center></i>
 
 
-The Q-Learning algorithm reached the best $AvgScore_{100}$ throught all episodes. By the episode 8000, the Expected Sarsa agent begins to increase its metric quicker than Q-Learning, maybe with more episodes Expected Sarsa could surpass Q-Learning. Also, notice that Sarsa agent did not scored in any played episode.
+The Q-Learning algorithm reached the best _AvgScore<sub>100</sub>_ throught all episodes. By the episode 8000, the Expected Sarsa agent begins to increase its metric quicker than Q-Learning, maybe with more episodes Expected Sarsa could surpass Q-Learning. Also, notice that Sarsa agent did not scored in any played episode.
 
 ### Justification
 
-Here are the final scores ($AvgScore_{100}$ for the last 100 episodes) for each agent as well the benchmark model one:
+Here are the final scores (_AvgScore<sub>100</sub>_ for the last 100 episodes) for each agent as well the benchmark model one:
 
 
 | - | Sarsa | Q-Learning (ε-greedy policy) | Expected Sarsa (ε-greedy policy) | Benchmark Model |
 |---|-------|------------------------------|----------------------------------|-----------------|
-| $AvgScore_{100}$ | 0.0   | 0.30          | 0.15                             | 675             |
+| _AvgScore<sub>100</sub>_ | 0.0   | 0.30          | 0.15                             | 675             |
 
-None of our agents could match at least $AvgScore_{100} = 1$  in the end, which make them far inferior than the benchmark model.
+None of our agents could match at least _AvgScore<sub>100</sub>_ = 1  in the end, which make them far inferior than the benchmark model.
 
 Here is the AvgScore100 x Episodes curve for the Benchmark Model:
 
@@ -496,7 +496,7 @@ Here is the AvgScore100 x Episodes curve for the Benchmark Model:
 <center><i> AvgScore100 x Episodes curve for the Benchmark Model (source: https://github.com/chncyhn/flappybird-qlearning-bot).</center></i>
 
 
-Notice that benchmark model converges by the iteration (episode) 6200 and the $AvgScore_{100}$ curve (the <span style="color:blue">blue one</span>) is much smoother than ours, which probably means that not only the model is way better (it reaches higher scores) but it is also much more consistent with their game results.
+Notice that benchmark model converges by the iteration (episode) 6200 and the _AvgScore<sub>100</sub>_ curve (the <span style="color:blue">blue one</span>) is much smoother than ours, which probably means that not only the model is way better (it reaches higher scores) but it is also much more consistent with their game results.
 
 
 ## V. Conclusion
