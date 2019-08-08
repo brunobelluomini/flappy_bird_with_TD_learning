@@ -3,13 +3,14 @@ from itertools import cycle
 import random
 import sys
 
-from agent import ExpectedSarsa
+from agent import QLearning
 import pygame
 from pygame.locals import *
 
 from environment import create_uniform_grid, map_position_tile
 
-bot = ExpectedSarsa(2)
+
+bot = QLearning(2)
 
 FPS = 30
 SCREENWIDTH  = 288
@@ -385,9 +386,6 @@ def showGameOverScreen(crashInfo):
 
         SCREEN.blit(IMAGES['base'], (basex, BASEY))
         showScore(score)
-
-        
-
 
         playerSurface = pygame.transform.rotate(IMAGES['player'][1], playerRot)
         SCREEN.blit(playerSurface, (playerx,playery))

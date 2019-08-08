@@ -21,7 +21,7 @@ This project has a goal to use three Reinforcement Learning algorithms, Sarsa, S
 In Flappy Bird game we have a continuous state space and an action space with the size of 2 (for the actions `flap` and `dont_flap` which we'll denote here as `1` and `0` respectively). To reduce the complexity and the state space we will discretize it to make tiles. We'll use 3 game inputs to train our agent:
 
 * Horizontal Distance to the Next Pipe **(DistX)** - The difference *in number of tiles* between the bird's current tile and the next pipe tile in the horizontal axis
-* Vertical Distance to the Next Gap Between Pipes **(DistY)** - The difference *in number of tiles* between the bird's current tile and the next mid gap between pipes tile in the vertical axis
+* Vertical Distance to the Next Gap Between Pipes (hereafter refered as _MidGap_) **(DistY)** - The difference *in number of tiles* between the bird's current tile and the next mid gap between pipes tile in the vertical axis
 * Vertical Velocity **(VelY)**- The bird fall in the game is accelerated and is determinant to decide whether `flap` or `dont_flap`
 
 We'll then map the states using those three features, `DistX`, `DistY` and `VelY`. The state
@@ -31,7 +31,7 @@ For the reward function, we want to heavily penalize when the player loses, give
 when the vertical distance `DistY` is 0 (which means the bird is on the same vertical position as the gap between the pipes, where it should flies throught) and give a standard reward based on the vertical distance.
 
 ### Metrics
-We can only achieve the project goal by measuring the game score itself, the higher the score the better as the agent went further in its gameplay. So in this project our evaluation metric will be the **average game score for the last 100 episodes**.  
+We can only achieve the project goal by measuring the game score itself, the higher the score the better as the agent went further in its gameplay. So in this project our evaluation metric will be the **average game score for the last 100 episodes** (hereafter denoted by _AvgScore<sub>100</sub>_).
 
 ## II. Analysis
 
@@ -40,7 +40,7 @@ As mentioned in the `Problem Statement` section, the Flappy Bird game environmen
 continuous state space with two possible actions. 
 
 For a better understanding of the state space the game screen has 512 height x 288 width. The bird has a fixed X position during the game and the ground has base position of 107 height, which makes the total space state of 405 vertical positions in which the bird is still alive. 
-The vertical velocity (`VelY`) is also a game input, and it ranges from -9 to 10, which makes the velocity space the size of 18. The negative signal in the velocity is due to the axis origin on the upper left corner of the screen.
+The vertical velocity (`VelY`) is also a game input, and it ranges from -9 to 10, which makes the velocity space the size of 20. The negative signal in the velocity is due to the axis origin on the upper left corner of the screen.
 
 <p align="center">
   <img src="images/game_reference_system.png">
@@ -48,7 +48,7 @@ The vertical velocity (`VelY`) is also a game input, and it ranges from -9 to 10
 
 <center><i>Game reference system with origin on the upper left corner</center></i>
 
-Finally, the game's state space is 405 (positional space) * 19 (velocity space) = **7695 possible states**.
+Finally, the game's state space is 405 (vertical positional space) * 230 (horizontal positional space) * 20 (velocity space) = **1,863,000 possible states**.
 
 As for the action space we only have 2 options: `0` (don't flap) or `1` (flap). If the player choses `1` then its vertical velocity will instantly switch to the default vertical acceleration of `-9` (which is the minimal vertical velocity) and then it starts to increase for `+1` each step that the player doesn't flap.
 
@@ -75,9 +75,8 @@ TD algorithms have this ability.
 #### Space Discretization
 
 In order to reduce the dimensionality of our states we'll use the Space Discretization
-technique. We will divide the space into 5x5 pixels tiles and use the resulted grid
-to compose the state. This will reduce our game's state space from 7695 to 1539 possible states, 
-a reduction of 80%.
+technique. We will divide the space into 10x10 pixels tiles and use the resulted grid
+to compose the state. 
 
 ### Benchmark
 
@@ -89,27 +88,314 @@ Speaking with numbers, he reached an average score of around 675 after the conve
 ## III. Methodology
 
 ### Data Preprocessing
-In this section, all of your preprocessing steps will need to be clearly documented, if any were necessary. From the previous section, any of the abnormalities or characteristics that you identified about the dataset will be addressed and corrected here. Questions to ask yourself when writing this section:
-- _If the algorithms chosen require preprocessing steps like feature selection or feature transformations, have they been properly documented?_
-- _Based on the **Data Exploration** section, if there were abnormalities or characteristics that needed to be addressed, have they been properly corrected?_
-- _If no preprocessing is needed, has it been made clear why?_
+
+As mentioned in the _Algorithms and Techniques_ above, the data preprocessing we have in this project is the _space discretization_ of the state space. 
+
+Recall that our state space, if taken no preprocessing, would have:
+
+<center> (512 - 107) * (288 - 58) * 20 = 1,863,000 possible states</center>
+<center><i>(height - floor position) * (width - base x position) * velocities </i></center>
+
+This amount of spaces will make the chosen algorithms to take a long amount of time to converge to a solution. To solve this problem we will reduce the state space using a _space discretization_ technique by making 10x10 tiles.
+
+
+<p align="center">
+  <img src="images/flappy_bird_grid_example.png">
+</p>
+<center><i>Space discretization example. Each grid is 10x10 wide</center></i>
+
+With the space discretization the game state space will become as follows:
+
+<center> (512 - 107)/ 10 * (288 - 58)/ 10 * 20 = 18,630 possible states</center>
+<center><i>(height - floor position) * (width - base X position) * velocities </i></center>
+
+This will reduce our game's state space from 1,863,000 to 18,630 possible states, a reduction of 99%. Further implementation details can be found at the _Implementation - Space Discretization_ section below.
 
 ### Implementation
 
 #### Algorithms
 
-Their implementation can be found in the `agent.py` file.
+All three algorithms implementations aimed to be as generic as possible, agnostic to the project problem (Flappy Bird game) so they can be used in other reinforcement learning problems as well. They are implemented in the `agent.py` file.
 
+##### Sarsa
+
+```Python
+class Sarsa:
+
+
+    def __init__(self, action_space, epsilon=1.0, force_training=False):
+        self.action_space = action_space
+        self.Q = self.load_q_values(force_training)
+        self.epsilon = epsilon
+        self.alpha = 0.15
+        self.gamma = 1.00
+
+
+    def learn(self, env):
+        state = env.get_state()
+        epsilon_greedy_policy = make_epsilon_greedy_policy(
+            self.action_space, 
+            self.Q[state], 
+            self.epsilon
+        )
+        action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+
+        while True:
+            next_state, reward, done = env.step(action)
+            epsilon_greedy_policy = make_epsilon_greedy_policy(
+                self.action_space, 
+                self.Q[next_state], 
+                self.epsilon
+            )
+            next_action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+            Q_current_action = self.Q[state][action]
+            Q_next_action = self.Q[next_state][next_action]
+            self.Q[next_state][next_action] = update_Q_values(
+                self.alpha,
+                reward,
+                self.gamma,
+                Q_current_action,
+                Q_next_action
+            )
+            state = next_state
+            action = next_action
+
+            if done:
+                break
+
+
+    def act(self, state):
+        epsilon_greedy_policy = make_epsilon_greedy_policy(
+            self.action_space, 
+            self.Q[state], 
+            self.epsilon
+        )
+        action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+
+        return action
+
+
+    def load_q_values(self, force_training):
+        if force_training or not os.path.exists('sarsa_q_values.json'):
+            return defaultdict(lambda: [0 for action in range(self.action_space)])
+        else:
+            q_values_file = open('sarsa_q_values.json', 'r')
+            q_values = json.load(q_values_file)
+            q_values_file.close()
+
+            return defaultdict(lambda: [0 for action in range(self.action_space)], q_values)
+
+
+    def save_q_values(self):
+        q_values_file = open('sarsa_q_values.json', 'w')
+        json.dump(dict(self.Q), q_values_file)
+        q_values_file.close()
+```
+
+---
+
+##### Q-Learning (ε-greedy policy)
+
+```Python
+class QLearning:
+
+
+    def __init__(self, action_space, epsilon=1.0, force_training=False):
+        self.action_space = action_space
+        self.Q = self.load_q_values(force_training)
+        self.epsilon = epsilon
+        self.alpha = 0.15
+        self.gamma = 1.00
+
+
+    def learn(self, env):
+        state = env.get_state()
+
+        while True:
+            epsilon_greedy_policy = make_epsilon_greedy_policy(
+                self.action_space, 
+                self.Q[state], 
+                self.epsilon
+            )
+            action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+            next_state, reward, done = env.step(action)
+            max_Q_a = np.max(
+                [self.Q[next_state][next_action] for next_action in np.arange(self.action_space)]
+            )
+            self.Q[state][action] = update_Q_values(
+                self.alpha,
+                reward,
+                self.gamma,
+                self.Q[state][action],
+                max_Q_a
+            )
+            state = next_state
+
+            if done:
+                break
+
+
+    def act(self, state):
+        epsilon_greedy_policy = make_epsilon_greedy_policy(
+            self.action_space, 
+            self.Q[state], 
+            self.epsilon
+        )
+        action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+
+        return action
+
+
+    def load_q_values(self, force_training):
+        if force_training or not os.path.exists('q_learning_q_values.json'):
+            return defaultdict(lambda: [0 for action in range(self.action_space)])
+        else:
+            q_values_file = open('q_learning_q_values.json', 'r')
+            q_values = json.load(q_values_file)
+            q_values_file.close()
+
+            return defaultdict(lambda: [0 for action in range(self.action_space)], q_values)
+
+
+    def save_q_values(self):
+        q_values_file = open('q_learning_q_values.json', 'w')
+        json.dump(dict(self.Q), q_values_file)
+        q_values_file.close()
+```
+
+---
+
+##### Expected Sarsa (ε-greedy policy)
+
+```Python
+class ExpectedSarsa:
+
+
+    def __init__(self, action_space, epsilon=1.0, force_training=False):
+        self.action_space = action_space
+        self.Q = self.load_q_values(force_training)
+        self.epsilon = epsilon
+        self.alpha = 0.15
+        self.gamma = 1.00
+
+
+    def learn(self, env):
+        state = env.get_state()
+
+        while True:
+            epsilon_greedy_policy = make_epsilon_greedy_policy(
+                self.action_space, 
+                self.Q[state], 
+                self.epsilon
+            )
+            action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+            next_state, reward, done = env.step(action)
+            next_policy = make_epsilon_greedy_policy(
+                self.action_space, 
+                self.Q[next_state], 
+                self.epsilon
+            )
+            expected_Q = np.dot(self.Q[next_state], next_policy)
+            self.Q[state][action] = update_Q_values(
+                self.alpha,
+                reward,
+                self.gamma,
+                self.Q[state][action],
+                expected_Q
+            )
+            state = next_state
+
+            if done:
+                break
+
+
+    def act(self, state):
+        epsilon_greedy_policy = make_epsilon_greedy_policy(
+            self.action_space, 
+            self.Q[state], 
+            self.epsilon
+        )
+        action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
+
+        return action
+
+
+    def load_q_values(self, force_training):
+        if force_training or not os.path.exists('expected_sarsa_q_values.json'):
+            return defaultdict(lambda: [0 for action in range(self.action_space)])
+        else:
+            q_values_file = open('expected_sarsa_q_values.json', 'r')
+            q_values = json.load(q_values_file)
+            q_values_file.close()
+
+            return defaultdict(lambda: [0 for action in range(self.action_space)], q_values)
+
+
+    def save_q_values(self):
+        q_values_file = open('expected_sarsa_q_values.json', 'w')
+        json.dump(dict(self.Q), q_values_file)
+        q_values_file.close()
+```
+
+
+There are three common methods between those three algorithms, `make_epsilon_greedy_policy`, `choose_action_from_policy` and `update_Q_values`, implemented as follows:
+
+```Python
+def make_epsilon_greedy_policy(action_space_size, Q_state, epsilon):
+    epsilon = max(epsilon, 0.10)
+    policy_state = np.ones(action_space_size) * epsilon / action_space_size
+    policy_state[np.argmax(Q_state)] = 1 - epsilon + (epsilon / action_space_size)
+
+    return policy_state
+
+
+def choose_action_from_policy(action_space, policy):
+    available_actions = np.arange(action_space)
+
+    return np.random.choice(available_actions, p=policy)
+
+
+def update_Q_values(alpha, reward, gamma, Q_current_action, Q_next_action):
+    return Q_current_action + alpha * (reward + gamma * Q_next_action - Q_current_action)
+```
+
+---
+
+#### Reward Function
+
+For the reward function, our goal is to make the bird fly throught the middle of the gap between pipes, thus improving our game score. 
+
+The idea is to heavily penalize the agent when it colides with either the floor or a pipe but it also is greatly rewarded when it scores a game point.
+The agent is also lightly penalized if the difference between the bird and the MidGap is equal or greater than 2 tiles, else it lightly receives a reward.
+
+The reward function is implemented as follows:
+
+```Python
+def get_reward(self, collision, next_state):
+    vertical_pos_diff = int(next_state.split('_')[1])
+
+    if collision:
+        return -10000
+
+    elif self.has_scored:
+        return 1000
+
+    elif abs(vertical_pos_diff) >= 2:
+        return -10    
+
+    else:
+        return 10
+```
 
 #### Space Discretization
-The discretization will be implemented as follows:
+The discretization will be implemented in file `environment.py` as follows:
 
 ```Python
 def create_uniform_grid(width, height):
     """
-    Create grids of 5x5 pixels
+    Create grids of 10x10 pixels
     """
-    grid_size = (5, 5)
+    grid_size = (10, 10)
     num_bins_horizontal = int(round(width / grid_size[0]))
     num_bins_vertical = int(round(height / grid_size[1]))
     bins = (num_bins_horizontal, num_bins_vertical)
@@ -129,67 +415,124 @@ def map_position_tile(position, grid):
     return list(int(np.digitize(p, g)) for p, g in zip(position, grid))
 ```
 
-In this section, the process for which metrics, algorithms, and techniques that you implemented for the given data will need to be clearly documented. It should be abundantly clear how the implementation was carried out, and discussion should be made regarding any complications that occurred during this process. Questions to ask yourself when writing this section:
-- _Is it made clear how the algorithms and techniques were implemented with the given datasets or input data?_
-- _Were there any complications with the original metrics or techniques that required changing prior to acquiring a solution?_
-- _Was there any part of the coding process (e.g., writing complicated functions) that should be documented?_
+#### State Mapping
 
+Recall that the state in this project will be mapped in function of three state features: 
+
+* `DistX`: The horizontal distance (in tile grids) between the bird and the next MidGap
+* `DistY`: Vertical distance between the bird and the MidGap
+* `VelY`: The current vertical velocity of the bird
+
+Our state will be the string `"DistX_DistY_VelY"`. The state mapping function `get_state` is implemented in file `environment.py` as follows:
+
+```Python
+def get_state(self):
+    if self.lower_pipes[0]['x'] - self.bird_pos_x > -30:
+        pipe = self.lower_pipes[0]
+    else:
+        pipe = self.lower_pipes[1]
+
+    bird_tile_pos = map_position_tile([self.bird_pos_x, self.bird_pos_y], self.game_grid)
+    mid_pipe_gap_tile_pos = map_position_tile([pipe['x'], pipe['y'] + self.pipe_gap_size / 2], self.game_grid)
+    pos_difference = np.subtract(mid_pipe_gap_tile_pos, bird_tile_pos)
+
+    return f"{pos_difference[0]}_{pos_difference[1]}_{self.bird_vel_y}"
+```
+
+
+#### Evaluation Metric
+
+The evaluation metric for this project is the _AvgScore<sub>100</sub>_ as mentioned in the section _I - Definition - Metrics_ above. This is simply calculated as:
+
+$$AvgScore_{100} = {1}/{100}*\sum_{episode=1}^{100} GameScore_{episode}$$
 
 
 ### Refinement
-In this section, you will need to discuss the process of improvement you made upon the algorithms and techniques you used in your implementation. For example, adjusting parameters for certain models to acquire improved solutions would fall under the refinement category. Your initial and final solutions should be reported, as well as any significant intermediate results as necessary. Questions to ask yourself when writing this section:
-- _Has an initial solution been found and clearly reported?_
-- _Is the process of improvement clearly documented, such as what techniques were used?_
-- _Are intermediate and final solutions clearly reported as the process is improved?_
 
+All three algorithms are trained with the same parameters, explained below:
+
+* Learning Rate ($\alpha$): **0.15**
+As Flappy Bird game has a deterministic behavior in regard of whether flap or not, setting a small value for $\alpha$ is reasonable in order to avoid our agent to unlearn some good movement.
+
+* Discount Rate ($\gamma$): **1.00**
+Similarly to the learning rate, the $\gamma$ is set to 1,0 to avoid agent to learn some unexpected movement in order to prioritize the immediate reward.
+
+* Exploration-Exploitation Rate ($\epsilon$): **max(1 - (0.045 * n_episode), 0.10)**
+We set the $\epsilon$ value by starting with 1.0 and decaying linearly until it reaches 0.10 over the first 2% of the number of trained episodes and fixed at 0.10 thereafter based on [Human-level control through deep reinforcement learning](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf) research paper
+
+* Number of Episodes: **10,000**
+Based on the benchmark model which reached its convergence at 10,000 episodes.
 
 ## IV. Results
-_(approx. 2-3 pages)_
 
 ### Model Evaluation and Validation
-In this section, the final model and any supporting qualities should be evaluated in detail. It should be clear how the final model was derived and why this model was chosen. In addition, some type of analysis should be used to validate the robustness of this model and its solution, such as manipulating the input data or environment to see how the model’s solution is affected (this is called sensitivity analysis). Questions to ask yourself when writing this section:
-- _Is the final model reasonable and aligning with solution expectations? Are the final parameters of the model appropriate?_
-- _Has the final model been tested with various inputs to evaluate whether the model generalizes well to unseen data?_
-- _Is the model robust enough for the problem? Do small perturbations (changes) in training data or the input space greatly affect the results?_
-- _Can results found from the model be trusted?_
+
+Here are the training results:
+
+<p align="center">
+  <img src="images/model_comparison.png">
+</p>
+<center><i>AvgScore100 x Episodes curve. Q-Learning reached the best score among them</center></i>
+
+
+The Q-Learning algorithm reached the best $AvgScore_{100}$ throught all episodes. By the episode 8000, the Expected Sarsa agent begins to increase its metric quicker than Q-Learning, maybe with more episodes Expected Sarsa could surpass Q-Learning. Also, notice that Sarsa agent did not scored in any played episode.
 
 ### Justification
-In this section, your model’s final solution and its results should be compared to the benchmark you established earlier in the project using some type of statistical analysis. You should also justify whether these results and the solution are significant enough to have solved the problem posed in the project. Questions to ask yourself when writing this section:
-- _Are the final results found stronger than the benchmark result reported earlier?_
-- _Have you thoroughly analyzed and discussed the final solution?_
-- _Is the final solution significant enough to have solved the problem?_
+
+Here are the final scores ($AvgScore_{100}$ for the last 100 episodes) for each agent as well the benchmark model one:
+
+
+| - | Sarsa | Q-Learning (ε-greedy policy) | Expected Sarsa (ε-greedy policy) | Benchmark Model |
+|---|-------|------------------------------|----------------------------------|-----------------|
+| $AvgScore_{100}$ | 0.0   | 0.30          | 0.15                             | 675             |
+
+None of our agents could match at least $AvgScore_{100} = 1$  in the end, which make them far inferior than the benchmark model.
+
+Here is the AvgScore100 x Episodes curve for the Benchmark Model:
+
+<p align="center">
+  <img widht=600 height=500 src="images/chncyhn_model_evaluation_example.png">
+</p>
+<center><i> AvgScore100 x Episodes curve for the Benchmark Model (source: https://github.com/chncyhn/flappybird-qlearning-bot).</center></i>
+
+
+Notice that benchmark model converges by the iteration (episode) 6200 and the $AvgScore_{100}$ curve (the <span style="color:blue">blue one</span>) is much smoother than ours, which probably means that not only the model is way better (it reaches higher scores) but it is also much more consistent with their game results.
 
 
 ## V. Conclusion
-_(approx. 1-2 pages)_
 
 ### Free-Form Visualization
-In this section, you will need to provide some form of visualization that emphasizes an important quality about the project. It is much more free-form, but should reasonably support a significant result or characteristic about the problem that you want to discuss. Questions to ask yourself when writing this section:
-- _Have you visualized a relevant or important quality about the problem, dataset, input data, or results?_
-- _Is the visualization thoroughly analyzed and discussed?_
-- _If a plot is provided, are the axes, title, and datum clearly defined?_
+
+<p align="center">
+  <img widht=600 height=500 src="images/bot_playing_example.png">
+</p>
+<center><i>Q-Learning agent playing after training.</center></i>
+
+The image above represents the most common behavior from our best agent (Q-Learning) when it plays after training: the bird keeps flapping until it reaches the pipe and then it's game over.
+
+It is curious because one of the reward conditions penalizes when the bird is higher than it was supposed to be, but the agent has not learned that it should keep the MidPipe high.
+
 
 ### Reflection
-In this section, you will summarize the entire end-to-end problem solution and discuss one or two particular aspects of the project you found interesting or difficult. You are expected to reflect on the project as a whole to show that you have a firm understanding of the entire process employed in your work. Questions to ask yourself when writing this section:
-- _Have you thoroughly summarized the entire process you used for this project?_
-- _Were there any interesting aspects of the project?_
-- _Were there any difficult aspects of the project?_
-- _Does the final model and solution fit your expectations for the problem, and should it be used in a general setting to solve these types of problems?_
+
+The following steps summarizes this project:
+
+1) Adapt the sourabhv's Flappy Bird Python implementation so that I could train the agents (source: [https://github.com/sourabhv/FlapPyBird)](https://github.com/sourabhv/FlapPyBird) 
+2) Adapt the Nanodegree's TD-Learning algorithms implementation so they could be able to both learn and play after with the learned movements
+3) Implement the environment by adapting the game itself to be more generic and able to an agent make decisions
+4) Design and implement a space state reduction using space discretization
+5) Design a reward function that makes sense with the problem statement
+6) Make a notebook (`Flappy Bird Training.ipynb`) with both training and evaluation
+
+I found the step 2 particularly interesting because I needed to revisit some lessons in the Nanodegree to better undestand the algorithms so I could implement them properly.
+
+The greatest challenge for me was in the step 5 when I was thinking in a good reward function that would solve the problem. Although the conditions make sense, the final results shown that either the reward function wasn't good or some implementation, either the environment or the agents, was not correct.
 
 ### Improvement
-In this section, you will need to provide discussion as to how one aspect of the implementation you designed could be improved. As an example, consider ways your implementation can be made more general, and what would need to be modified. You do not need to make this improvement, but the potential solutions resulting from these changes are considered and compared/contrasted to your current solution. Questions to ask yourself when writing this section:
-- _Are there further improvements that could be made on the algorithms or techniques you used in this project?_
-- _Were there algorithms or techniques you researched that you did not know how to implement, but would consider using if you knew how?_
-- _If you used your final solution as the new benchmark, do you think an even better solution exists?_
 
------------
+There are some improvements that we may consider for future works.
 
-**Before submitting, ask yourself. . .**
+1) In Flappy Bird game the actions has no immediate consequences. Imagine if a player hit a bad flap in a moment. The consequence of that bad jump will only be suffered some moments later (say after 10 frames). To solve this, we could also implement a Replay Buffer to store some plays by the agent and then update the Q-values by revisiting them. This could probably improve a lot our metrics.
 
-- Does the project report you’ve written follow a well-organized structure similar to that of the project template?
-- Is each section (particularly **Analysis** and **Methodology**) written in a clear, concise and specific fashion? Are there any ambiguous terms or phrases that need clarification?
-- Would the intended audience of your project be able to understand your analysis, methods, and results?
-- Have you properly proof-read your project report to assure there are minimal grammatical and spelling mistakes?
-- Are all the resources used for this project correctly cited and referenced?
-- Is the code that implements your solution easily readable and properly commented?
-- Does the code execute without error and produce results similar to those reported?
+2) We can also use a more robust Reinforcement Learning algorithm which can handle very well with large continuous spaces, like Deep Q-Learning (DQL). This way the discretization cannot interfere in the agent training.
+Besides, we can also change the state mapping for the game pixels itself with a more robust algorithm, this way we can avoid whatever problem with bad state mapping.

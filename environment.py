@@ -10,9 +10,9 @@ from pygame.locals import *
 
 def create_uniform_grid(width, height):
     """
-    Create grids of 5x5 pixels
+    Create grids of 10x10 pixels
     """
-    grid_size = (5, 5)
+    grid_size = (10, 10)
     num_bins_horizontal = int(round(width / grid_size[0]))
     num_bins_vertical = int(round(height / grid_size[1]))
     bins = (num_bins_horizontal, num_bins_vertical)
@@ -218,7 +218,7 @@ class FlappyEnvironment:
 
 
     def get_reward(self, collision, next_state):
-        vertical_pos_diff = abs(int(next_state.split('_')[1]))
+        vertical_pos_diff = int(next_state.split('_')[1])
 
         if collision:
             return -10000
@@ -226,10 +226,11 @@ class FlappyEnvironment:
         elif self.has_scored:
             return 1000
 
-        elif vertical_pos_diff == 0:
-            return 100
+        elif abs(vertical_pos_diff) >= 2:
+            return -10        
 
-        return 10 / vertical_pos_diff
+        else:
+            return 10
 
 
     def get_state(self):
