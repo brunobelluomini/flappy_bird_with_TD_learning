@@ -25,12 +25,12 @@ def update_Q_values(alpha, reward, gamma, Q_current_action, Q_next_action):
 class Sarsa:
 
 
-    def __init__(self, action_space, epsilon=1.0, force_training=False):
+    def __init__(self, action_space, alpha=0.15, gamma=1.0, epsilon=1.0, force_training=False):
         self.action_space = action_space
         self.Q = self.load_q_values(force_training)
+        self.alpha = alpha
+        self.gamma = gamma
         self.epsilon = epsilon
-        self.alpha = 0.15
-        self.gamma = 1.00
 
 
     def learn(self, env):
@@ -43,7 +43,7 @@ class Sarsa:
         action = choose_action_from_policy(self.action_space, epsilon_greedy_policy)
 
         while True:
-            next_state, reward, done, next_bird_pos = env.step(action)
+            next_state, reward, done = env.step(action)
             epsilon_greedy_policy = make_epsilon_greedy_policy(
                 self.action_space, 
                 self.Q[next_state], 
@@ -97,12 +97,12 @@ class Sarsa:
 class QLearning:
 
 
-    def __init__(self, action_space, epsilon=1.0, force_training=False):
+    def __init__(self, action_space, alpha=0.15, gamma=1.0, epsilon=1.0, force_training=False):
         self.action_space = action_space
         self.Q = self.load_q_values(force_training)
+        self.alpha = alpha
+        self.gamma = gamma
         self.epsilon = epsilon
-        self.alpha = 0.15
-        self.gamma = 1.00
 
 
     def learn(self, env):
@@ -163,12 +163,12 @@ class QLearning:
 class ExpectedSarsa:
 
 
-    def __init__(self, action_space, epsilon=1.0, force_training=False):
+    def __init__(self, action_space, alpha=0.15, gamma=1.0, epsilon=1.0, force_training=False):
         self.action_space = action_space
         self.Q = self.load_q_values(force_training)
+        self.alpha = alpha
+        self.gamma = gamma
         self.epsilon = epsilon
-        self.alpha = 0.15
-        self.gamma = 1.00
 
 
     def learn(self, env):

@@ -242,5 +242,8 @@ class FlappyEnvironment:
         bird_tile_pos = map_position_tile([self.bird_pos_x, self.bird_pos_y], self.game_grid)
         mid_pipe_gap_tile_pos = map_position_tile([pipe['x'], pipe['y'] + self.pipe_gap_size / 2], self.game_grid)
         pos_difference = np.subtract(mid_pipe_gap_tile_pos, bird_tile_pos)
+        dist_x = pos_difference[0]
+        dist_y = pos_difference[1]
+        vel_y = self.bird_vel_y
 
-        return f"{pos_difference[0]}_{pos_difference[1]}_{self.bird_vel_y}"
+        return f"{dist_x}_{dist_y}_{vel_y}"

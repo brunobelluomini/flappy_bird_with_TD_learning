@@ -31,7 +31,7 @@ For the reward function, we want to heavily penalize when the player loses, give
 when the vertical distance `DistY` is 0 (which means the bird is on the same vertical position as the gap between the pipes, where it should flies throught) and give a standard reward based on the vertical distance.
 
 ### Metrics
-We can only achieve the project goal by measuring the game score itself, the higher the score the better as the agent went further in its gameplay. So in this project our evaluation metric will be the **average game score for the last 100 episodes** (hereafter denoted by _AvgScore<sub>100</sub>_).
+We can only achieve the project goal by measuring the game score itself, the higher the score the better as the agent went further in its gameplay. So in this project our evaluation metric will be the **average game score for the last 100 episodes** (hereafter denoted by _AvgScore<sub>100</sub>_). The reason why we will average is that we are not only concerned about high score, but also with the agents are able to make high scores consistently.
 
 ## II. Analysis
 
@@ -68,9 +68,38 @@ Here is an example of the three state space components `DistX`, `DistY` and `Vel
 
 For the algorithms we will use the _Temporal-Difference Methods_ ones which we
 have learned in the Nanodegree: Sarsa, Q-Learning (ε-greedy policy) and Expected Sarsa (ε-greedy policy).
-As the Flappy Bird game has some repetition in the way it works, it could be a good idea
-to use RL algorithms which learn from each iteration, not only when the episode ends, and the
-TD algorithms have this ability.
+
+##### Sarsa
+
+Sarsa is an on-policy TD algorithm, _i.e._, the update rule uses the action chosen by the followed policy. Its update rule is defined by the following equation:
+
+<p align="center">
+  <img src="images/sarsa_equation.png">
+</p>
+
+This is the most basic algorithms which we'll use and it simply update the action value based on the next state.
+
+##### Q-Learning (ε-greedy policy)
+
+Q-Learning is an off-policy TD algorithm, _i.e._, its update rule uses the action which will yield the highest Q-Value, while the actual policy used might restrict that action or choose another. Its update rule is defined by the following equation:
+
+<p align="center">
+  <img src="images/q_learning_equation.png">
+</p>
+
+The difference between Q-Learning and Sarsa is that Q-Learning updates its action value based on the best action for the next state.
+
+##### Expected Sarsa (ε-greedy policy)
+
+Expected Sarsa is also an on-policy TD algorithm, same as Sarsa. Its update rule is defined by the following equation:
+
+<p align="center">
+  <img src="images/expected_sarsa_equation.png">
+</p>
+
+Different from the others, Expected Sarsa considers all actions for the next state by summing their action values in the update step.
+
+As Flappy Bird game has some repetition in the way it works, it could be a good idea to use RL algorithms which learn from each iteration, not only when the episode ends, and those TD algorithms have this ability.
 
 #### Space Discretization
 
@@ -123,12 +152,12 @@ All three algorithms implementations aimed to be as generic as possible, agnosti
 class Sarsa:
 
 
-    def __init__(self, action_space, epsilon=1.0, force_training=False):
+    def __init__(self, action_space, alpha=0.15, gamma=1.0, epsilon=1.0, force_training=False):
         self.action_space = action_space
         self.Q = self.load_q_values(force_training)
+        self.alpha = alpha
+        self.gamma = gamma
         self.epsilon = epsilon
-        self.alpha = 0.15
-        self.gamma = 1.00
 
 
     def learn(self, env):
@@ -200,12 +229,12 @@ class Sarsa:
 class QLearning:
 
 
-    def __init__(self, action_space, epsilon=1.0, force_training=False):
+    def __init__(self, action_space, alpha=0.15, gamma=1.0, epsilon=1.0, force_training=False):
         self.action_space = action_space
         self.Q = self.load_q_values(force_training)
+        self.alpha = alpha
+        self.gamma = gamma
         self.epsilon = epsilon
-        self.alpha = 0.15
-        self.gamma = 1.00
 
 
     def learn(self, env):
@@ -271,12 +300,12 @@ class QLearning:
 class ExpectedSarsa:
 
 
-    def __init__(self, action_space, epsilon=1.0, force_training=False):
+    def __init__(self, action_space, alpha=0.15, gamma=1.0, epsilon=1.0, force_training=False):
         self.action_space = action_space
         self.Q = self.load_q_values(force_training)
+        self.alpha = alpha
+        self.gamma = gamma
         self.epsilon = epsilon
-        self.alpha = 0.15
-        self.gamma = 1.00
 
 
     def learn(self, env):
@@ -337,7 +366,6 @@ class ExpectedSarsa:
         q_values_file.close()
 ```
 
-
 There are three common methods between those three algorithms, `make_epsilon_greedy_policy`, `choose_action_from_policy` and `update_Q_values`, implemented as follows:
 
 ```Python
@@ -368,6 +396,8 @@ For the reward function, our goal is to make the bird fly throught the middle of
 The idea is to heavily penalize the agent when it colides with either the floor or a pipe but it also is greatly rewarded when it scores a game point.
 The agent is also lightly penalized if the difference between the bird and the MidGap is equal or greater than 2 tiles, else it lightly receives a reward.
 
+That was one of the most complicated parts and required a lot of refinement after examinating how each agent was playing after their training. 
+
 The reward function is implemented as follows:
 
 ```Python
@@ -388,6 +418,7 @@ def get_reward(self, collision, next_state):
 ```
 
 #### Space Discretization
+That was the easiest part as the space discretization implementation was already done in the Nanodegree's _RL in Continuous Spaces_ lesson exercise, it just needed to adapt to my problem.
 The discretization will be implemented in file `environment.py` as follows:
 
 ```Python
@@ -435,27 +466,33 @@ def get_state(self):
     bird_tile_pos = map_position_tile([self.bird_pos_x, self.bird_pos_y], self.game_grid)
     mid_pipe_gap_tile_pos = map_position_tile([pipe['x'], pipe['y'] + self.pipe_gap_size / 2], self.game_grid)
     pos_difference = np.subtract(mid_pipe_gap_tile_pos, bird_tile_pos)
+    dist_x = pos_difference[0]
+    dist_y = pos_difference[1]
+    vel_y = self.bird_vel_y
 
-    return f"{pos_difference[0]}_{pos_difference[1]}_{self.bird_vel_y}"
+    return f"{dist_x}_{dist_y}_{vel_y}"
 ```
 
+Apart from those implementations mentioned above, making the game's environment (file `environment.py`) by adapting the Python's Flappy Bird implementation so that a RL algorithm could learn from was the most hard working part of this project. I needed to figure out what most parts of the base code were doing, rewriting and name them properly so that it would become easier to understand what's going on.
 
 #### Evaluation Metric
 
 The evaluation metric for this project is the _AvgScore<sub>100</sub>_ as mentioned in the section _I - Definition - Metrics_ above. This is simply calculated as:
 
-$$AvgScore_{100} = {1}/{100}*\sum_{episode=1}^{100} GameScore_{episode}$$
+<p align="center">
+  <img src="images/avg_score_100_metric_equation.png">
+</p>
 
 
 ### Refinement
 
-All three algorithms are trained with the same parameters, explained below:
+For each algorithm we trained with three different learning rates (⍺) (_0.10_, _0.15_ and _0.25_) and two values of discount rate (_0.90_ and _1.00_). In this section we'll only keep the best parameter value while the justification about them will be in the _Results - Model Evaluation and Validation - Justification_ section below.
 
-* Learning Rate (⍺): **0.15**
+* Learning Rate (⍺): **0.25**
 As Flappy Bird game has a deterministic behavior in regard of whether flap or not, setting a small value for ⍺ is reasonable in order to avoid our agent to unlearn some good movement.
 
 * Discount Rate (γ): **1.00**
-Similarly to the learning rate, the γ is set to 1,0 to avoid agent to learn some unexpected movement in order to prioritize the immediate reward.
+Similarly to the learning rate, the γ is set to a high value to avoid agent to learn some unexpected movement in order to prioritize the immediate reward.
 
 * Exploration-Exploitation Rate (ε): **max(1 - (0.045 * n_episode), 0.10)**
 We set the ε value by starting with 1.0 and decaying linearly until it reaches 0.10 over the first 2% of the number of trained episodes and fixed at 0.10 thereafter based on [Human-level control through deep reinforcement learning](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf) research paper
@@ -470,21 +507,47 @@ Based on the benchmark model which reached its convergence at 10,000 episodes.
 Here are the training results:
 
 <p align="center">
-  <img widht=350 height=300 src="images/model_comparison.png">
+  <img widht=350 height=300 src="images/model_comparison_alpha_0.25_gamma_1.0.png">
 </p>
 <center><i>AvgScore100 x Episodes curve. Q-Learning reached the best score among them</center></i>
 
 
-The Q-Learning algorithm reached the best _AvgScore<sub>100</sub>_ throught all episodes. By the episode 8000, the Expected Sarsa agent begins to increase its metric quicker than Q-Learning, maybe with more episodes Expected Sarsa could surpass Q-Learning. Also, notice that Sarsa agent did not scored in any played episode.
+The Q-Learning algorithm reached the best _AvgScore<sub>100</sub>_ throught all episodes. By the episode 5000, the Expected Sarsa agent begins to decrease its metric while Q-Learning keeps increasing it. Also, notice that Sarsa agent did not scored in any played episode.
 
 ### Justification
 
-Here are the final scores (_AvgScore<sub>100</sub>_ for the last 100 episodes) for each agent as well the benchmark model one:
+Here are the results for each combination of algorithm, ⍺ and γ parameters:
+
+#### Sarsa
+
+|        | ⍺=0.10 | ⍺=0.15 | ⍺=0.25 |
+|--------|--------|--------|--------|
+| γ=1.00 | 0      | 0      | 0      |
+| γ=0.90 | 0      | 0      | 0      |
+
+#### Q-Learning
+
+|        | ⍺=0.10 | ⍺=0.15 | ⍺=0.25         |
+|--------|--------|--------|----------------|
+| γ=1.00 | 0.22   | 0.37   | **0.40 (*)**   |
+| γ=0.90 | 0.30   | 0.25   | 0.12           |
+
+
+#### Expected Sarsa
+
+|        | ⍺=0.10 | ⍺=0.15 | ⍺=0.25 |
+|--------|--------|--------|--------|
+| γ=1.00 | 0.13   | 0.13   | 0.11   |
+| γ=0.90 | 0.09   | 0      | 0      |
+
+**(*) - Best Score**
+
+Here are the final scores (_AvgScore<sub>100</sub>_ for the last 100 episodes) for each agent considering the best set of parameters as well the benchmark model one:
 
 
 | - | Sarsa | Q-Learning (ε-greedy policy) | Expected Sarsa (ε-greedy policy) | Benchmark Model |
 |---|-------|------------------------------|----------------------------------|-----------------|
-| _AvgScore<sub>100</sub>_ | 0.0   | 0.30          | 0.15                             | 675             |
+| _AvgScore<sub>100</sub>_ | 0.0   | 0.40          | 0.13                             | 675             |
 
 None of our agents could match at least _AvgScore<sub>100</sub>_ = 1  in the end, which make them far inferior than the benchmark model.
 
